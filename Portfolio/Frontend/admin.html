@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Contact Messages</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .login-form input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .login-form button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .login-form button:hover {
+            background-color: #0056b3;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .contact-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .contact-list th,
+        .contact-list td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .contact-list th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .contact-list tr:hover {
+            background-color: #f5f5f5;
+        }
+        .contact-list .date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .back-button {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-container" class="login-container">
+        <h1>Admin Login</h1>
+        <div id="login-error" class="error-message"></div>
+        <form id="login-form" class="login-form">
+            <input type="password" id="password" placeholder="Enter admin password" required>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="contacts-container" class="container" style="display: none;">
+        <h1>Contact Messages</h1>
+        <div id="contacts-list-container">
+            <table class="contact-list">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Subject</th>
+                        <th>Message</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="contacts-list">
+                    <!-- Contacts will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+        <a href="index.html" class="back-button">Back to Portfolio</a>
+    </div>
+
+    <script>
+        // Admin credentials
+        const ADMIN_PASSWORD = 'Mayank9368@';
+        const ADMIN_TOKEN = 'ADM1N_s3cUr3_t0K3n_2025_P0rtf0l10_AbH';
+        let isAuthenticated = false;
+
+        // Function to fetch contacts with authentication
+        async function fetchContacts() {
+            try {
+                console.log('Fetching contacts with token:', ADMIN_TOKEN); // Debug log
+                const response = await fetch('http://localhost:3000/api/contacts', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to fetch contacts');
+                }
+                
+                const contacts = await response.json();
+                console.log('Contacts received:', contacts); // Debug log
+                displayContacts(contacts);
+            } catch (error) {
+                console.error('Error fetching contacts:', error);
+                alert('Failed to load contacts: ' + error.message);
+            }
+        }
+
+        function displayContacts(contacts) {
+            const contactsList = document.getElementById('contacts-list');
+            contactsList.innerHTML = '';
+
+            if (!contacts || contacts.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="6" style="text-align: center;">No contacts found</td>';
+                contactsList.appendChild(row);
+                return;
+            }
+
+            contacts.forEach(contact => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${contact.fullName || 'N/A'}</td>
+                    <td>${contact.email || 'N/A'}</td>
+                    <td>${contact.mobileNumber || 'N/A'}</td>
+                    <td>${contact.subject || 'N/A'}</td>
+                    <td>${contact.message || 'N/A'}</td>
+                    <td class="date">${contact.createdAt ? new Date(contact.createdAt).toLocaleString() : 'N/A'}</td>
+                `;
+                contactsList.appendChild(row);
+            });
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('login-error');
+
+            if (password === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('contacts-container').style.display = 'block';
+                await fetchContacts();
+            } else {
+                errorDiv.textContent = 'Incorrect password. Please try again.';
+            }
+        });
+    </script>
+</body>
+</html>
